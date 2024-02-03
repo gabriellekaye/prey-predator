@@ -422,7 +422,7 @@ HORIZONTAL
 @#$#@#$#@
 ## WHAT IS IT?
 
-(a general understanding of what the model is trying to show or explain)
+Prey-predator model of rabbits and foxes. Rabbits can eat carrots or grass found in the area, while foxes eat the rabbits that reproduce faster.
 
 ## HOW IT WORKS
 
