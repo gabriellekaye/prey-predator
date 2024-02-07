@@ -39,6 +39,7 @@ to go
     forward max-forward-rabbit
     set energy energy - energy-loss
     ;if pcolor = brown [set energy energy - energy-loss] ; no food
+    print p
     if pcolor = orange [eat-carrot] ; carrot
     if pcolor = green [eat-grass] ; grass
 
