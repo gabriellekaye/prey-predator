@@ -2,7 +2,7 @@ turtles-own [ energy ]  ;; agents own energy
 patches-own [grass-amount carrot-amount patch-type]
 
 breed [rabbits rabbit]
-rabbits-own [ energy ]
+rabbits-own [ energy rabbit-count ]
 
 to setup
   clear-all
@@ -14,6 +14,7 @@ to setup
     set size 1.5
     set energy 20
     setxy random-xcor random-ycor
+    set rabbit-count initial-number-rabbits ; rabbit ctr
   ]
 
   setup-environment
@@ -185,6 +186,9 @@ to my-update-plots
 
   set-current-plot-pen "carrot"
   plot sum [ carrot-amount ] of patches / 4 ;; scaling factor so plot looks nice
+
+  set-current-plot-pen "rabbit"
+  plot sum [ rabbit-count ] of rabbits
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
