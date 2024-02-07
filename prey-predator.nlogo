@@ -1,6 +1,10 @@
 turtles-own [ energy ]  ;; agents own energy
 patches-own [grass-amount carrot-amount patch-type]
 
+globals [
+  reproduction-energy-threshold
+]
+
 breed [rabbits rabbit]
 rabbits-own [ energy rabbit-count ]
 
@@ -22,18 +26,21 @@ to setup
 end
 
 to go
-  if not any? rabbits [stop]
+    if not any? rabbits [stop]
 
-  ask turtles with [shape = "star"] [
+  	ask rabbits [
     ifelse coin-flip? [right random 360] [left random 360]
-    forward random max-forward-rabbit
-
+    	forward random max-forward-rabbit
     if pcolor = brown [set energy energy - 5] ; no food
     if pcolor = orange [eat-carrot] ; carrot
     if pcolor = green [eat-grass] ; grass
 
-    ; reproduce-rabbits ; havent coded this yet
+    ; reproduce-rabbits
+      if energy >= reproduction-energy-threshold [
+      reproduce-rabbits
+    ]
   ]
+  
 
 
   regrow-grass ;; regrow the grass
@@ -42,6 +49,17 @@ to go
   tick
 
   my-update-plots ;; update the plots
+end
+
+to reproduce-rabbits
+  let new-rabbit one-of rabbits
+  if new-rabbit != nobody [
+    hatch-rabbits 1 [
+      set energy (energy / 2)  ;; Energy of parent is divided between parent and offspring
+      setxy random-xcor random-ycor
+      set rabbit-count rabbit-count + 1 ; rabbit ctr++
+    ]
+  ]
 end
 
 to-report coin-flip?
