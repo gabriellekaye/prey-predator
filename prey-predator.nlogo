@@ -1,14 +1,16 @@
 turtles-own [ energy cooldown ]  ;; agents own energy
-patches-own [grass-amount carrot-amount patch-type]
+patches-own [grass-amount carrot-amount patch-type regrowth-count]
 
 globals [
   reproduction-energy-threshold
+  rabbit-count
+  fox-count
 ]
 
 breed [ foxes fox ]
 breed [rabbits rabbit]
-rabbits-own [ rabbit-count ]
-foxes-own [ fox-count ]
+;rabbits-own [ rabbit-count ]
+;foxes-own [ fox-count ]
 
 to setup
   clear-all
@@ -16,36 +18,45 @@ to setup
   create-rabbits initial-number-rabbits  ; init rabbit
   [
     set shape "star" ; idk how to make the shape haha pa help
-    set color black
+    set color white
     set size 1.5
     set energy initial-energy-rabbits
     set cooldown 0
     setxy random-xcor random-ycor
-    set rabbit-count initial-number-rabbits ; rabbit ctr
+    ;set rabbit-count initial-number-rabbits ; rabbit ctr
   ]
+  set rabbit-count initial-number-rabbits
+  set fox-count initial-number-foxes
 
   setup-environment
   reset-ticks
 
-  ;create-fox
-  display-labels
+  create-fox
+  ;display-labels
 end
 
 to go
-    if not any? rabbits [stop]
+  if ticks = 500 [stop]
+    ;if not any? rabbits [stop]
     ;if not any? foxes [stop]
   	ask rabbits [
-    ifelse coin-flip? [right random 360] [left random 360]
+    ifelse coin-flip? [right random 180] [left random 180]
     forward max-forward-rabbit
-    set energy energy - energy-loss
-    ;if pcolor = brown [set energy energy - energy-loss] ; no food
-    if pcolor = orange [eat-carrot] ; carrot
-    if pcolor = green [eat-grass] ; grass
+
+    if pcolor = brown [eat-nothing] ; no food
+    eat-grass
+    eat-carrot
+    regrow-grass
+    regrow-carrots
+
 
     ;rabbit dead
-    if energy < 0 [ die ]
+    if energy < 0 [
+      set rabbit-count rabbit-count - 1
+      die
+    ]
     ; reproduce-rabbits
-      if random-float 100 < 10 [ ;10% chance reproduce
+      if random-float 100 < 60 [ ;10% chance reproduce
       ifelse cooldown > 0 [ ;cooldown after reproducing
         set cooldown cooldown - 1
       ][ reproduce-rabbits]
@@ -54,7 +65,7 @@ to go
 
 
   foxes-activity ;; activity function of predator
-  display-labels
+  ;display-labels
   regrow-grass ;; regrow the grass
   regrow-carrots ;; regrow the carrots
 
@@ -65,11 +76,10 @@ end
 
 to reproduce-rabbits
   let new-rabbit one-of rabbits
-  set cooldown 2 ; cooldown ticks
+  set cooldown 10 ; cooldown ticks
   if new-rabbit != nobody [
     hatch-rabbits 1 [
-      set energy 20
-      ;set energy (energy / 2)  ;; Energy of parent is divided between parent and offspring
+      set energy (energy / 2)  ;; Energy of parent is divided between parent and offspring
       ;setxy random-xcor random-ycor
       set rabbit-count rabbit-count + 1 ; rabbit ctr++
     ]
@@ -101,7 +111,12 @@ to setup-dirt
   ask patches [
     set pcolor brown
     set patch-type "dirt"
+    set regrowth-count 0
   ]
+end
+
+to eat-nothing
+  set energy energy - energy-loss
 end
 
 
@@ -115,26 +130,19 @@ to setup-grass
 
   ask n-of green-patches patches [
     set pcolor green
-    set grass-amount random-float 10.0
+    set regrowth-count 0
     set patch-type "grass"
-    recolor-grass ;; change the world green
   ]
-end
-
-;; recolor the grass to indicate how much has been eaten
-to recolor-grass
-  ;;  set pcolor scale-color green grass 0 20
-  set pcolor scale-color green (10 - grass-amount) -10 20
 end
 
 ;; regrow the grass
 to regrow-grass
   ask patches with [patch-type = "grass"] [
-    set grass-amount grass-amount + grass-regrowth-rate
-    if grass-amount > 10.0 [
-      set grass-amount 10.0
+    ifelse (regrowth-count > 0) [
+      set regrowth-count regrowth-count - 1
+    ][
+      set pcolor green
     ]
-    recolor-grass
   ]
 end
 
@@ -142,13 +150,10 @@ end
 to eat-grass
   ;; check to make sure there is grass here
   if (patch-type = "grass")[
-    if ( grass-amount >= energy-gain-grass ) [
-      ;; increment the agent's energy
-      set energy energy + energy-gain-grass
-      ;; decrement the grass
-      set grass-amount grass-amount - energy-gain-grass
-      recolor-grass
-    ]
+    ;; increment the agent's energy
+    set energy energy + energy-gain-grass
+    set pcolor brown ; after eaten it would be brown
+    set regrowth-count 800 ; ticks to regrow
   ]
 end
 
@@ -165,29 +170,22 @@ to setup-carrots
     ask patches in-radius carrot-patch-size[
       set pcolor orange
       set patch-type "carrot"
-      set carrot-amount random-float 5.0
-      recolor-carrot
+      set regrowth-count 0
     ]
     set pcolor orange
     set patch-type "carrot"
-    set carrot-amount random-float 5.0
-    recolor-carrot
+    set regrowth-count 0
   ]
-end
-
-;; recolor the carrots to indicate how much has been eaten
-to recolor-carrot
-  set pcolor scale-color orange (12 - carrot-amount) -10 20
 end
 
 ;; regrow the carrots
 to regrow-carrots
   ask patches with [patch-type = "carrot"] [
-    set carrot-amount carrot-amount + carrot-regrowth-rate
-    if carrot-amount > 10.0 [
-      set carrot-amount 10.0
+    ifelse (regrowth-count != 0) [
+      set regrowth-count regrowth-count - 1
+    ][
+      set pcolor orange
     ]
-    recolor-carrot
   ]
 end
 
@@ -195,12 +193,15 @@ end
 to eat-carrot
   ;; check to make sure there is carrot here
   if (patch-type = "carrot")[
-    if ( carrot-amount >= energy-gain-carrot ) [
-      ;; increment the agent's energy
-      set energy energy + energy-gain-carrot
-      ;; decrement the carrot
-      set carrot-amount carrot-amount - energy-gain-carrot
-      recolor-carrot
+    ;; increment the agent's energy
+    if (energy < 100) [
+      ifelse (energy + energy-gain-carrot <= 100)[
+        set energy energy + energy-gain-carrot
+        set pcolor brown ; after eaten it would be brown
+        set regrowth-count 6000 ; ticks to regrow
+      ][
+        eat-nothing
+      ]
     ]
   ]
 end
@@ -216,6 +217,7 @@ to  create-fox  ; create the predator, then initialize their variables
     set color red ;;color
     set size 2  ;;fox size
     set energy initial-energy-foxes ;; initial energy
+    set fox-count initial-number-foxes
     set cooldown 0
     setxy random-xcor random-ycor
   ]
@@ -227,7 +229,7 @@ to foxes-activity ; activity function of predator
 
   ask foxes [
     fox-move
-    set energy energy - energy-loss  ; spent energy for every movement
+    set energy energy - 2  ; spent energy for every movement
     ifelse cooldown > 0 [
       set cooldown cooldown - 1
     ][ reproduce-foxes ] ; predator reproduction
@@ -239,15 +241,15 @@ to foxes-activity ; activity function of predator
 end
 
 to fox-move ; movement of predator
-  rt random 50
-  lt random 50
+  rt random 180
+  lt random 180
   fd max-forward-fox
 end
 
 
 to eat-rabbit  ; eating mechanism of predator
-  if energy < 200 [
-    let prey min-one-of rabbits in-radius 10[
+  if energy < 100 [
+    let prey min-one-of rabbits in-radius 1[
       distance myself
     ]
 
@@ -257,9 +259,12 @@ to eat-rabbit  ; eating mechanism of predator
       face prey ;;chase nearby prey
       if distance prey < 1
       [
-        ask prey [ die ]
-        ifelse energy + 25 > 200 [
-          set energy 200 ; max energy is 200
+        ask prey [
+          set rabbit-count rabbit-count - 1
+          die
+        ]
+        ifelse energy + 25 > 100 [
+          set energy 100 ; max energy is 200
         ][
           set energy energy + 25; get energy from eating
         ]
@@ -271,13 +276,17 @@ end
 
 to fox-death  ; death function of predator
   ; 0 energy = dead
-  if energy <= 0 [ die ]
+  if energy <= 0 [
+    set fox-count fox-count - 1
+    die
+  ]
 end
 
 to reproduce-foxes
   if random-float 100 < 10 [  ; 10% chance of reproduction
     set cooldown 2 ; cooldown ticks
-    hatch-foxes 1 [ set energy 30 ]  ; spawn child
+    set fox-count fox-count + 1
+    hatch-foxes 1 [ set energy energy / 2 ]  ; spawn child
   ]
 end
 
@@ -298,24 +307,24 @@ end
 
 ;; update the plots
 to my-update-plots
-  set-current-plot-pen "grass"
-  plot sum [ grass-amount ] of patches / 50 ;; scaling factor so plot looks nice
+  ;set-current-plot-pen "grass"
+  ;plot sum [ grass-amount ] of patches / 50 ;; scaling factor so plot looks nice
 
-  set-current-plot-pen "carrot"
-  plot sum [ carrot-amount ] of patches / 4 ;; scaling factor so plot looks nice
+  ;set-current-plot-pen "carrot"
+  ;plot sum [ carrot-amount ] of patches / 4 ;; scaling factor so plot looks nice
 
   set-current-plot-pen "rabbit"
-  plot sum [ rabbit-count ] of rabbits
+  plot rabbit-count
 
   set-current-plot-pen "fox"
-  plot sum [ fox-count ] of foxes
+  plot fox-count
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-452
-70
-1253
-872
+536
+55
+1336
+857
 -1
 -1
 13.0
@@ -364,7 +373,7 @@ carrot-patch-size
 carrot-patch-size
 3
 10
-5.0
+3.0
 1
 1
 NIL
@@ -379,7 +388,7 @@ grass-percentage
 grass-percentage
 5
 100
-30.0
+40.0
 5
 1
 NIL
@@ -394,7 +403,7 @@ number-carrot-patches
 number-carrot-patches
 2
 10
-2.0
+8.0
 1
 1
 NIL
@@ -456,7 +465,7 @@ energy-gain-grass
 energy-gain-grass
 0
 50
-10.0
+15.0
 15
 1
 NIL
@@ -505,10 +514,10 @@ SLIDER
 386
 initial-number-rabbits
 initial-number-rabbits
-1
+5
 100
-10.0
-1
+100.0
+5
 1
 NIL
 HORIZONTAL
@@ -522,7 +531,7 @@ max-forward-rabbit
 max-forward-rabbit
 1
 100
-1.0
+4.0
 1
 1
 NIL
@@ -550,10 +559,10 @@ SLIDER
 371
 initial-number-foxes
 initial-number-foxes
-1
+5
 100
-16.0
-1
+25.0
+5
 1
 NIL
 HORIZONTAL
@@ -582,7 +591,7 @@ initial-energy-foxes
 initial-energy-foxes
 30
 100
-50.0
+40.0
 5
 1
 NIL
@@ -596,8 +605,8 @@ SLIDER
 max-forward-fox
 max-forward-fox
 1
-100
-1.0
+5
+2.0
 1
 1
 NIL
