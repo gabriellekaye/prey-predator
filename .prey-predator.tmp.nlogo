@@ -32,11 +32,11 @@ to setup
   reset-ticks
 
   create-fox
-  ;display-labels
+  display-labels
 end
 
 to go
-  if ticks = 500 [stop]
+  ;if ticks = 500 [stop]
     ;if not any? rabbits [stop]
     ;if not any? foxes [stop]
   	ask rabbits [
@@ -59,15 +59,17 @@ to go
     ifelse cooldown > 0 [ ;cooldown after reproducing
       set cooldown cooldown - 1
     ][
-      if random-float 100 < 35[
+      if random-float 100 < 55[
         reproduce-rabbits
       ]
     ]
+
+    run-rabbit
   ]
 
 
   foxes-activity ;; activity function of predator
-  ;display-labels
+  display-labels
   regrow-grass ;; regrow the grass
   regrow-carrots ;; regrow the carrots
 
@@ -78,10 +80,10 @@ end
 
 to reproduce-rabbits
   let new-rabbit one-of rabbits
-  set cooldown  ; cooldown ticks
+  set cooldown 6 ; cooldown ticks
   if new-rabbit != nobody [
     hatch-rabbits 1 [
-      set energy (energy / 2)  ;; Energy of parent is divided between parent and offspring
+      set energy (energy)  ;; Energy of parent is divided between parent and offspring
       ;setxy random-xcor random-ycor
       set rabbit-count rabbit-count + 1 ; rabbit ctr++
     ]
@@ -90,6 +92,22 @@ end
 
 to-report coin-flip?
   report random 2 = 0
+end
+
+to run-rabbit ; eating mechanism of predator
+  let predator min-one-of foxes in-radius 2[
+    distance myself
+  ]
+
+  if predator != nobody
+  [
+
+    if distance predator < 2[
+      face predator
+      back max-forward-rabbit + 2
+    ]
+  ]
+
 end
 
 
@@ -155,7 +173,7 @@ to eat-grass
     ;; increment the agent's energy
     set energy energy + energy-gain-grass
     set pcolor brown ; after eaten it would be brown
-    set regrowth-count 800 ; ticks to regrow
+    set regrowth-count 5000 ; ticks to regrow
   ]
 end
 
@@ -234,6 +252,7 @@ to foxes-activity ; activity function of predator
     set energy energy - 3  ; spent energy for every movement
     ifelse cooldown > 0 [
       set cooldown cooldown - 1
+      print cooldown
     ][ reproduce-foxes ] ; predator reproduction
     eat-rabbit ; predator eat rabbit
     fox-death ; 0 energy = dead
@@ -245,12 +264,12 @@ end
 to fox-move ; movement of predator
   rt random 180
   lt random 180
-  fd max-forward-fox
+  fd random max-forward-fox
 end
 
 to eat-rabbit  ; eating mechanism of predator
-  if energy < 100 [
-    let prey min-one-of rabbits in-radius 1[
+  if energy < 55 [
+    let prey min-one-of rabbits in-radius [
       distance myself
     ]
 
@@ -258,18 +277,18 @@ to eat-rabbit  ; eating mechanism of predator
     if prey != nobody
     [
       face prey ;;chase nearby prey
+      if distance prey > 3[
+        fd max-forward-fox + 1
+      ]
+
       if distance prey < 1
       [
         ask prey [
           set rabbit-count rabbit-count - 1
           die
         ]
-        ifelse energy + 20 > 100 [
-          set energy 100 ; max energy is 200
-        ][
-          set energy energy + 20; get energy from eating
-        ]
-
+          ;set energy 100 ; max energy is 200
+          set energy energy + 20
       ]
     ]
   ]
@@ -284,11 +303,14 @@ to fox-death  ; death function of predator
 end
 
 to reproduce-foxes
-  if random-float 100 < 80 [  ; 10% chance of reproduction
-    set cooldown 15 ; cooldown ticks
-    set fox-count fox-count + 1
-    hatch-foxes 1 [ set energy initial-energy-foxes ]  ; spawn child
+  if energy >= 40[
+    if random-float 100 < 60 [  ; 10% chance of reproduction
+      set cooldown 12 ; cooldown ticks
+      set fox-count fox-count + 1
+      hatch-foxes 1 [ set energy initial-energy-foxes ]  ; spawn child
+    ]
   ]
+
 end
 
 
@@ -392,7 +414,7 @@ grass-percentage
 grass-percentage
 5
 100
-40.0
+45.0
 5
 1
 NIL
@@ -533,7 +555,7 @@ max-forward-rabbit
 max-forward-rabbit
 1
 100
-4.0
+3.0
 1
 1
 NIL
@@ -622,9 +644,9 @@ SLIDER
 energy-loss
 energy-loss
 1
-100
-5.0
-2
+20
+8.0
+1
 1
 NIL
 HORIZONTAL
