@@ -32,11 +32,20 @@ to setup
   reset-ticks
 
   create-fox
-  ;display-labels
+  display-labels
 end
 
 to go
-  if ticks = 500 [stop]
+  if ticks = 500 [
+    print ("RABBITS:")
+    print (rabbit-count)
+
+    print ("FOXES:")
+    print (fox-count)
+
+    stop
+
+  ]
     ;if not any? rabbits [stop]
     ;if not any? foxes [stop]
   	ask rabbits [
@@ -67,7 +76,7 @@ to go
 
 
   foxes-activity ;; activity function of predator
-  ;display-labels
+  display-labels
   regrow-grass ;; regrow the grass
   regrow-carrots ;; regrow the carrots
 
@@ -78,7 +87,7 @@ end
 
 to reproduce-rabbits
   let new-rabbit one-of rabbits
-  set cooldown  ; cooldown ticks
+  set cooldown 25 ; cooldown ticks
   if new-rabbit != nobody [
     hatch-rabbits 1 [
       set energy (energy / 2)  ;; Energy of parent is divided between parent and offspring
@@ -155,7 +164,7 @@ to eat-grass
     ;; increment the agent's energy
     set energy energy + energy-gain-grass
     set pcolor brown ; after eaten it would be brown
-    set regrowth-count 800 ; ticks to regrow
+    set regrowth-count 5000 ; ticks to regrow
   ]
 end
 
@@ -391,9 +400,9 @@ SLIDER
 grass-percentage
 grass-percentage
 5
-100
-40.0
-5
+50
+32.0
+1
 1
 NIL
 HORIZONTAL
@@ -422,7 +431,7 @@ grass-regrowth-rate
 grass-regrowth-rate
 0
 2.0
-0.1
+0.0
 0.1
 1
 NIL
@@ -563,7 +572,7 @@ initial-number-foxes
 initial-number-foxes
 5
 100
-25.0
+100.0
 5
 1
 NIL
@@ -622,9 +631,9 @@ SLIDER
 energy-loss
 energy-loss
 1
-100
-5.0
-2
+20
+6.0
+1
 1
 NIL
 HORIZONTAL
