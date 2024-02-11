@@ -41,7 +41,7 @@ to go
     ;if not any? foxes [stop]
   	ask rabbits [
     ifelse coin-flip? [right random 180] [left random 180]
-    forward random max-forward-rabbit
+    forward rmax-forward-rabbit
 
     eat-nothing ; no food
     eat-grass
