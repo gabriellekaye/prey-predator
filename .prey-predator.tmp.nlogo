@@ -41,7 +41,7 @@ to go
     ;if not any? foxes [stop]
   	ask rabbits [
     ifelse coin-flip? [right random 180] [left random 180]
-    forward rmax-forward-rabbit
+    forward random max-forward-rabbit
 
     eat-nothing ; no food
     eat-grass
@@ -56,10 +56,12 @@ to go
       die
     ]
     ; reproduce-rabbits
-      if random-float 100 < 60 [ ;10% chance reproduce
-      ifelse cooldown > 0 [ ;cooldown after reproducing
-        set cooldown cooldown - 1
-      ][ reproduce-rabbits]
+    ifelse cooldown > 0 [ ;cooldown after reproducing
+      set cooldown cooldown - 1
+    ][
+      if random-float 100 < 35[
+        reproduce-rabbits
+      ]
     ]
   ]
 
@@ -76,7 +78,7 @@ end
 
 to reproduce-rabbits
   let new-rabbit one-of rabbits
-  set cooldown 10 ; cooldown ticks
+  set cooldown  ; cooldown ticks
   if new-rabbit != nobody [
     hatch-rabbits 1 [
       set energy (energy / 2)  ;; Energy of parent is divided between parent and offspring
@@ -246,7 +248,6 @@ to fox-move ; movement of predator
   fd max-forward-fox
 end
 
-
 to eat-rabbit  ; eating mechanism of predator
   if energy < 100 [
     let prey min-one-of rabbits in-radius 1[
@@ -283,8 +284,8 @@ to fox-death  ; death function of predator
 end
 
 to reproduce-foxes
-  if random-float 100 < 5 [  ; 10% chance of reproduction
-    set cooldown 2 ; cooldown ticks
+  if random-float 100 < 80 [  ; 10% chance of reproduction
+    set cooldown 15 ; cooldown ticks
     set fox-count fox-count + 1
     hatch-foxes 1 [ set energy initial-energy-foxes ]  ; spawn child
   ]
@@ -307,12 +308,15 @@ end
 
 ;; update the plots
 to my-update-plots
-  ;set-current-plot-pen "grass"
-  ;plot sum [ grass-amount ] of patches / 50 ;; scaling factor so plot looks nice
+  set-current-plot "Amount of Food over Time"
+  set-current-plot-pen "grass"
+  plot count patches with [pcolor = green]
 
-  ;set-current-plot-pen "carrot"
-  ;plot sum [ carrot-amount ] of patches / 4 ;; scaling factor so plot looks nice
+  set-current-plot-pen "carrot"
+  plot count patches with [pcolor = orange]
 
+
+  set-current-plot "Population over Time"
   set-current-plot-pen "rabbit"
   plot rabbit-count
 
@@ -487,10 +491,10 @@ NIL
 HORIZONTAL
 
 PLOT
-37
-647
-393
-872
+1389
+196
+2112
+468
 Population over Time
 Time
 Population
@@ -504,8 +508,6 @@ true
 PENS
 "fox" 1.0 0 -5298144 true "" ""
 "rabbit" 1.0 0 -5987164 true "" ""
-"carrot" 1.0 0 -955883 true "" ""
-"grass" 1.0 0 -10899396 true "" ""
 
 SLIDER
 32
@@ -626,6 +628,25 @@ energy-loss
 1
 NIL
 HORIZONTAL
+
+PLOT
+1386
+558
+2109
+801
+Amount of Food over Time
+Time
+Amount
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"carrot" 1.0 0 -955883 true "" ""
+"grass" 1.0 0 -10899396 true "" ""
 
 @#$#@#$#@
 ## WHAT IS IT?
